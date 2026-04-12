@@ -3,21 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Open Order Status — Mercedes Scientific | JIT4You</title>
+<title>Open Order Status — Mercedes Scientific | JIT4Labs</title>
+<link rel="icon" href="https://jit4you.myshopify.com/cdn/shop/files/JIT4LABS_Favicon.png" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Open Sans', sans-serif;
     background: #f0f2f5;
-    color: #1a1a2e;
+    color: rgba(16, 30, 62, 0.75);
     min-height: 100vh;
   }
 
-  /* Header */
+  /* Header — JIT4You navy */
   .header {
-    background: linear-gradient(135deg, #0a1628 0%, #1a237e 50%, #283593 100%);
+    background: #101E3E;
     color: white;
-    padding: 32px 40px;
+    padding: 24px 40px;
     position: relative;
     overflow: hidden;
   }
@@ -28,7 +30,7 @@
     right: -10%;
     width: 300px;
     height: 300px;
-    background: rgba(255,255,255,0.03);
+    background: rgba(0,128,128,0.06);
     border-radius: 50%;
   }
   .header-content {
@@ -41,26 +43,20 @@
     z-index: 1;
   }
   .header h1 {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
     letter-spacing: -0.5px;
+    color: #ffffff;
   }
   .header .customer-name {
-    font-size: 16px;
-    opacity: 0.85;
+    font-size: 15px;
+    opacity: 0.8;
     margin-top: 4px;
     font-weight: 400;
   }
-  .header .logo {
-    font-size: 15px;
-    font-weight: 600;
-    opacity: 0.9;
-    text-align: right;
-  }
-  .header .logo-sub {
-    font-size: 11px;
-    opacity: 0.6;
-    margin-top: 2px;
+  .header .logo-img {
+    height: 48px;
+    width: auto;
   }
 
   /* Container */
@@ -83,11 +79,12 @@
     padding: 22px 24px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     text-align: center;
+    border-top: 3px solid #008080;
   }
   .summary-card .value {
     font-size: 32px;
     font-weight: 800;
-    color: #1a237e;
+    color: #101E3E;
     line-height: 1;
   }
   .summary-card .label {
@@ -131,7 +128,7 @@
   }
   .dot-overdue { background: #e53935; }
   .dot-soon { background: #ff9800; }
-  .dot-ok { background: #43a047; }
+  .dot-ok { background: #008080; }
   .dot-tbd { background: #bdbdbd; }
 
   /* Table */
@@ -147,15 +144,15 @@
     font-size: 14px;
   }
   thead th {
-    background: #f8f9fb;
+    background: #101E3E;
     padding: 14px 16px;
     text-align: left;
     font-weight: 700;
-    color: #555;
+    color: #ffffff;
     text-transform: uppercase;
     font-size: 11px;
     letter-spacing: 0.8px;
-    border-bottom: 2px solid #e8e8e8;
+    border-bottom: 2px solid #008080;
   }
   tbody td {
     padding: 13px 16px;
@@ -163,7 +160,7 @@
     vertical-align: top;
   }
   tbody tr:hover {
-    background: #fafbfd;
+    background: #f5fafa;
   }
   tr.first-in-group td {
     border-top: 2px solid #e0e0e0;
@@ -174,7 +171,7 @@
 
   .so-number {
     font-weight: 700;
-    color: #1a237e;
+    color: #008080;
     white-space: nowrap;
   }
   .so-date {
@@ -184,11 +181,12 @@
   }
   .item-name {
     max-width: 380px;
+    color: #101E3E;
   }
   .qty {
     text-align: center;
     font-weight: 700;
-    color: #333;
+    color: #101E3E;
     font-size: 15px;
   }
 
@@ -202,7 +200,7 @@
     font-weight: 600;
   }
   .eta-ok {
-    color: #2e7d32;
+    color: #008080;
     font-weight: 500;
   }
   .eta-tbd {
@@ -210,15 +208,17 @@
     font-style: italic;
   }
 
-  /* Footer */
+  /* Footer — JIT4You navy */
   .footer {
+    background: #101E3E;
     text-align: center;
-    padding: 32px 20px;
-    color: #aaa;
+    padding: 24px 20px;
+    color: rgba(255,255,255,0.6);
     font-size: 12px;
+    margin-top: 20px;
   }
   .footer a {
-    color: #1a237e;
+    color: #008080;
     text-decoration: none;
   }
 
@@ -230,7 +230,7 @@
   }
   .empty-state h2 {
     font-size: 20px;
-    color: #666;
+    color: #101E3E;
     margin-bottom: 8px;
   }
 
@@ -238,6 +238,7 @@
   @media (max-width: 768px) {
     .header { padding: 20px; }
     .header h1 { font-size: 20px; }
+    .header .logo-img { height: 36px; }
     .container { padding: 16px; }
     table { font-size: 13px; }
     thead th, tbody td { padding: 10px 8px; }
@@ -253,10 +254,7 @@
       <h1>Open Order Status</h1>
       <div class="customer-name">Mercedes Scientific</div>
     </div>
-    <div class="logo">
-      JIT4You Inc.
-      <div class="logo-sub">Your Just-In-Time Supply Partner</div>
-    </div>
+    <img src="https://jit4you.myshopify.com/cdn/shop/files/JIT4LABS-Logo.png" alt="JIT4Labs" class="logo-img">
   </div>
 </div>
 
@@ -278,7 +276,7 @@
   </div>
 
   <div class="info-bar">
-    <div class="report-date">Report generated: April 12, 2026 at 03:50 PM</div>
+    <div class="report-date">Report generated: April 12, 2026 at 04:01 PM</div>
     <div class="legend">
       <span><span class="dot dot-overdue"></span> Overdue</span>
       <span><span class="dot dot-soon"></span> Within 7 days</span>
