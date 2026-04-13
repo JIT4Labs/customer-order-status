@@ -123,7 +123,7 @@
     display: inline-block;
   }
   .dot-ontrack { background: #008080; }
-  .dot-delayed { background: #e53935; }
+  .dot-delayed { background: #101E3E; }
 
   /* Table */
   .table-card {
@@ -192,24 +192,24 @@
   /* ETA colors */
   .eta-ontrack {
     color: #008080;
-    font-weight: 500;
+    font-weight: 400;
   }
   .eta-delayed {
-    color: #e53935;
-    font-weight: 700;
+    color: #101E3E;
+    font-weight: 400;
   }
   .eta-passed {
     display: block;
     font-size: 11px;
-    color: #e53935;
-    font-weight: 600;
+    color: #101E3E;
+    font-weight: 400;
     font-style: italic;
     margin-top: 2px;
   }
 
   /* Shop button */
   .shop-btn-wrapper {
-    text-align: center;
+    text-align: left;
     margin-top: 28px;
   }
   .shop-btn {
@@ -226,6 +226,28 @@
   }
   .shop-btn:hover {
     background: #006666;
+  }
+
+  /* Message section */
+  .message-section {
+    margin-top: 28px;
+    padding: 24px 28px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    font-size: 14px;
+    color: rgba(16, 30, 62, 0.75);
+    line-height: 1.7;
+  }
+  .message-section .contact-line {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #101E3E;
+  }
+  .message-section a {
+    color: #008080;
+    text-decoration: none;
+    font-weight: 600;
   }
 
   /* Footer — JIT4You navy */
@@ -297,7 +319,7 @@
   </div>
 
   <div class="info-bar">
-    <div class="report-date">Report generated: April 12, 2026 at 06:27 PM</div>
+    <div class="report-date">Report generated: April 12, 2026 at 06:33 PM</div>
     <div class="legend">
       <span><span class="dot dot-ontrack"></span> On track (5-10 days)</span>
       <span><span class="dot dot-delayed"></span> Delayed (10+ days)</span>
@@ -361,11 +383,17 @@
     <a href="https://jit4you.myshopify.com/account/login" class="shop-btn">Log In to JIT4Labs Store</a>
   </div>
 
+  <div class="message-section">
+    <p>We are working diligently to provide you with full transparency and visibility into the shipping and delivery process, so you can better plan your operations.</p>
+    <p>For any questions, don't hesitate to contact us:</p>
+    <p class="contact-line"><a href="mailto:CustomerSupport@jit4you.com">CustomerSupport@jit4you.com</a></p>
+    <p class="contact-line"><a href="tel:+18556548872">(855) 654-8872</a></p>
+  </div>
+
 </div>
 
 <div class="footer">
-  <p>This report is updated daily. For questions, contact <a href="mailto:CustomerSupport@jit4you.com">CustomerSupport@jit4you.com</a></p>
-  <p style="margin-top:6px;">&copy; 2026 JIT4You Inc. &mdash; All rights reserved.</p>
+  <p>&copy; 2026 JIT4You Inc. &mdash; All rights reserved.</p>
 </div>
 
 </body>
