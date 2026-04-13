@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Open Order Status — Mercedes Scientific | JIT4Labs</title>
+<title>Open Order Report — Mercedes Scientific | JIT4Labs</title>
 <link rel="icon" href="https://jit4you.myshopify.com/cdn/shop/files/JIT4LABS_Favicon.png" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -15,32 +15,25 @@
     min-height: 100vh;
   }
 
-  /* Header — JIT4You navy */
+  /* Header — logo left, title right */
   .header {
     background: #101E3E;
     color: white;
     padding: 24px 40px;
-    position: relative;
-    overflow: hidden;
-  }
-  .header::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -10%;
-    width: 300px;
-    height: 300px;
-    background: rgba(0,128,128,0.06);
-    border-radius: 50%;
   }
   .header-content {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: relative;
-    z-index: 1;
+  }
+  .header .logo-img {
+    height: 52px;
+    width: auto;
+  }
+  .header-right {
+    text-align: right;
   }
   .header h1 {
     font-size: 24px;
@@ -50,18 +43,20 @@
   }
   .header .customer-name {
     font-size: 15px;
-    opacity: 0.8;
+    opacity: 0.85;
     margin-top: 4px;
     font-weight: 400;
   }
-  .header .logo-img {
-    height: 48px;
-    width: auto;
+  .header .customer-address {
+    font-size: 12px;
+    opacity: 0.55;
+    margin-top: 2px;
+    font-weight: 400;
   }
 
   /* Container */
   .container {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 28px 24px;
   }
@@ -126,10 +121,8 @@
     border-radius: 50%;
     display: inline-block;
   }
-  .dot-overdue { background: #e53935; }
-  .dot-soon { background: #ff9800; }
-  .dot-ok { background: #008080; }
-  .dot-tbd { background: #bdbdbd; }
+  .dot-ontrack { background: #008080; }
+  .dot-delayed { background: #e53935; }
 
   /* Table */
   .table-card {
@@ -174,13 +167,18 @@
     color: #008080;
     white-space: nowrap;
   }
+  .web-order {
+    color: #555;
+    white-space: nowrap;
+    font-size: 13px;
+  }
   .so-date {
     color: #777;
     white-space: nowrap;
     font-size: 13px;
   }
   .item-name {
-    max-width: 380px;
+    max-width: 340px;
     color: #101E3E;
   }
   .qty {
@@ -191,21 +189,42 @@
   }
 
   /* ETA colors */
-  .eta-overdue {
-    color: #e53935;
-    font-weight: 700;
-  }
-  .eta-soon {
-    color: #e65100;
-    font-weight: 600;
-  }
-  .eta-ok {
+  .eta-ontrack {
     color: #008080;
     font-weight: 500;
   }
-  .eta-tbd {
-    color: #9e9e9e;
+  .eta-delayed {
+    color: #e53935;
+    font-weight: 700;
+  }
+  .eta-passed {
+    display: block;
+    font-size: 11px;
+    color: #e53935;
+    font-weight: 600;
     font-style: italic;
+    margin-top: 2px;
+  }
+
+  /* Shop button */
+  .shop-btn-wrapper {
+    text-align: center;
+    margin-top: 28px;
+  }
+  .shop-btn {
+    display: inline-block;
+    background: #008080;
+    color: #ffffff;
+    padding: 14px 36px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .shop-btn:hover {
+    background: #006666;
   }
 
   /* Footer — JIT4You navy */
@@ -215,7 +234,7 @@
     padding: 24px 20px;
     color: rgba(255,255,255,0.6);
     font-size: 12px;
-    margin-top: 20px;
+    margin-top: 32px;
   }
   .footer a {
     color: #008080;
@@ -250,11 +269,12 @@
 
 <div class="header">
   <div class="header-content">
-    <div>
-      <h1>Open Order Status</h1>
-      <div class="customer-name">Mercedes Scientific</div>
-    </div>
     <img src="https://jit4you.myshopify.com/cdn/shop/files/JIT4LABS-Logo.png" alt="JIT4Labs" class="logo-img">
+    <div class="header-right">
+      <h1>Open Order Report</h1>
+      <div class="customer-name">Mercedes Scientific</div>
+      <div class="customer-address">12210 Rangeland Parkway, Lakewood Ranch, Florida, 34211</div>
+    </div>
   </div>
 </div>
 
@@ -270,45 +290,50 @@
       <div class="label">Open Line Items</div>
     </div>
     <div class="summary-card">
-      <div class="value">0</div>
+      <div class="value">3</div>
       <div class="label">Items with ETA</div>
     </div>
   </div>
 
   <div class="info-bar">
-    <div class="report-date">Report generated: April 12, 2026 at 04:01 PM</div>
+    <div class="report-date">Report generated: April 12, 2026 at 06:17 PM</div>
     <div class="legend">
-      <span><span class="dot dot-overdue"></span> Overdue</span>
-      <span><span class="dot dot-soon"></span> Within 7 days</span>
-      <span><span class="dot dot-ok"></span> On track</span>
-      <span><span class="dot dot-tbd"></span> TBD</span>
+      <span><span class="dot dot-ontrack"></span> On track (5-10 days)</span>
+      <span><span class="dot dot-delayed"></span> Delayed (10+ days)</span>
     </div>
   </div>
 
   <div class="table-card">
     
-    <table><thead><tr><th>Sales Order</th><th>Date</th><th>Item</th><th>Open Qty</th><th>ETA</th></tr></thead><tbody>
-            <tr class="first-in-group">
-                <td class="so-number">SO334</td>
-                <td class="so-date">Mar 30, 2026</td>
-                <td class="item-name">Beckman Coulter OSR6195 Olympus HDL Cholesterol Reagent</td>
-                <td class="qty">1</td>
-                <td class="eta-tbd">TBD</td>
-            </tr>
+    <table><thead><tr><th>Sales Order</th><th>Order ID</th><th>Date</th><th>Item</th><th>Open Qty</th><th>ETA</th></tr></thead><tbody>
             <tr class="first-in-group">
                 <td class="so-number">SO314</td>
+                <td class="web-order"></td>
                 <td class="so-date">Mar 13, 2026</td>
                 <td class="item-name">Beckman Coulter 33830 Access Total T3, 100 Determinations</td>
                 <td class="qty">11</td>
-                <td class="eta-tbd">TBD</td>
+                <td class="eta-delayed">Mar 23, 2026<span class="eta-passed">ETA passed &ndash; follow-up in progress.</span></td>
             </tr>
             <tr class="">
                 <td class="so-number"></td>
+                <td class="web-order"></td>
                 <td class="so-date"></td>
                 <td class="item-name">Beckman Coulter A98856 Access 25OH Vitamin D Reagent, 100 Determinations</td>
                 <td class="qty">27</td>
-                <td class="eta-tbd">TBD</td>
+                <td class="eta-delayed">Mar 23, 2026<span class="eta-passed">ETA passed &ndash; follow-up in progress.</span></td>
+            </tr>
+            <tr class="first-in-group">
+                <td class="so-number">SO334</td>
+                <td class="web-order">1327760</td>
+                <td class="so-date">Mar 30, 2026</td>
+                <td class="item-name">Beckman Coulter OSR6195 Olympus HDL Cholesterol Reagent</td>
+                <td class="qty">1</td>
+                <td class="eta-delayed">Apr 09, 2026<span class="eta-passed">ETA passed &ndash; follow-up in progress.</span></td>
             </tr></tbody></table>
+  </div>
+
+  <div class="shop-btn-wrapper">
+    <a href="https://jit4you.myshopify.com/account/login" class="shop-btn">Log In to JIT4Labs Store</a>
   </div>
 
 </div>
