@@ -22,12 +22,12 @@ jobs:
           python-version: '3.11'
 
       - name: Run customer order status report
-        run: python3 scripts/customer_order_status.py
+        run: python3customer_order_status.py
 
       - name: Upload reports as artifact (for debugging)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: customer-reports-${{ github.run_id }}
-          path: scripts/customer-order-status/
+          path: customer-order-status/
           retention-days: 7
