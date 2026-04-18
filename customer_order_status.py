@@ -48,8 +48,9 @@ GITHUB_REPO = "JIT4Labs/customer-order-status"
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
 GITHUB_PAGES_URL = "https://JIT4Labs.github.io/customer-order-status"
 
-# ─── Zapier Webhook for Welcome Emails (via Outlook) ─────────────────────────
-ZAPIER_WEBHOOK_URL = os.environ["ZAPIER_WEBHOOK_URL"]
+# ─── Resend API for Welcome Emails ────────────────────────────────────────────
+RESEND_API_KEY = os.environ["RESEND_API_KEY"]
+RESEND_FROM = "JIT4Labs <customersupport@jit4you.com>"
 
 # ─── Welcome Email Tracking ──────────────────────────────────────────────────
 # JSON file stored on GitHub to track which customers already received welcome emails
@@ -989,7 +990,7 @@ def push_to_github():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Welcome Email — Tracking, Composition & Sending via Zapier
+# Welcome Email — Tracking, Composition & Sending via Resend
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def load_welcome_tracking():
@@ -1171,25 +1172,29 @@ def compose_welcome_email_html(customer_name, report_url, customer_address=""):
 </html>"""
 
 
-def send_welcome_email_via_zapier(customer_name, customer_email, report_url, html_body):
-    """Send a welcome email via Zapier catch hook (triggers Outlook send)."""
+def send_welcome_email_via_resend(customer_name, customer_email, report_url, html_body):
+    """Send a welcome email via Resend API (replaces prior Zapier→Outlook flow)."""
     payload = {
-        "to_email": customer_email,
-        "customer_name": customer_name,
-        "report_url": report_url,
+        "from": RESEND_FROM,
+        "to": [customer_email],
         "subject": f"Your Open Order Report is Ready — {customer_name}",
-        "html_body": html_body,
+        "html": html_body,
     }
     data = json.dumps(payload).encode()
-    req = urllib.request.Request(ZAPIER_WEBHOOK_URL, data=data, method="POST")
+    req = urllib.request.Request("https://api.resend.com/emails", data=data, method="POST")
+    req.add_header("Authorization", f"Bearer {RESEND_API_KEY}")
     req.add_header("Content-Type", "application/json")
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
-            result = resp.read().decode()
-            print(f"    Zapier response: {result[:200]}")
+            result = json.loads(resp.read().decode())
+            print(f"    Resend response: id={result.get('id', 'unknown')}")
             return True
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode()
+        print(f"    Resend error: {e.code} {err_body[:200]}")
+        return False
     except Exception as e:
-        print(f"    Zapier webhook error: {e}")
+        print(f"    Resend error: {e}")
         return False
 
 
@@ -1238,7 +1243,7 @@ def send_welcome_emails_to_new_customers(customer_data, account_map):
         html_body = compose_welcome_email_html(customer_name, report_url, customer_address)
 
         # Send via Zapier webhook
-        success = send_welcome_email_via_zapier(
+        success = send_welcome_email_via_resend(
             customer_name, customer_email, report_url, html_body
         )
 
