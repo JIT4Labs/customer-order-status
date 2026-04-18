@@ -28,5 +28,5 @@ jobs:
           VTIGER_USER: ${{ secrets.VTIGER_USER }}
           VTIGER_ACCESS_KEY: ${{ secrets.VTIGER_ACCESS_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ZAPIER_WEBHOOK_URL: ${{ secrets.ZAPIER_WEBHOOK_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: python3 customer_order_status.py
