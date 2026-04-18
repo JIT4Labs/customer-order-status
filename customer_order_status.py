@@ -1184,6 +1184,7 @@ def send_welcome_email_via_resend(customer_name, customer_email, report_url, htm
     req = urllib.request.Request("https://api.resend.com/emails", data=data, method="POST")
     req.add_header("Authorization", f"Bearer {RESEND_API_KEY}")
     req.add_header("Content-Type", "application/json")
+    req.add_header("User-Agent", "JIT4Labs customer-order-status/1.0")
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             result = json.loads(resp.read().decode())
