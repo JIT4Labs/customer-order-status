@@ -1,0 +1,32 @@
+name: Daily Customer Order Status Report
+
+on:
+  # Manual trigger — for testing. Schedule is intentionally disabled until
+  # a manual run is verified, then the `schedule:` block below is uncommented
+  # and the Cowork scheduled task is disabled at the same time.
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "30 13 * * *"   # 13:30 UTC = 06:30 AM PST / 09:30 AM EST
+
+permissions:
+  contents: write   # required so the script can push HTML reports + update sent_welcome_emails.json
+
+jobs:
+  run-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run customer order status report
+        env:
+          VTIGER_USER: ${{ secrets.VTIGER_USER }}
+          VTIGER_ACCESS_KEY: ${{ secrets.VTIGER_ACCESS_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ZAPIER_WEBHOOK_URL: ${{ secrets.ZAPIER_WEBHOOK_URL }}
+        run: python3 customer_order_status.py
