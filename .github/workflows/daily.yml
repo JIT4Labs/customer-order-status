@@ -5,8 +5,8 @@ on:
   # a manual run is verified, then the `schedule:` block below is uncommented
   # and the Cowork scheduled task is disabled at the same time.
   workflow_dispatch:
-  # schedule:
-  #   - cron: "30 13 * * *"   # 13:30 UTC = 06:30 AM PST / 09:30 AM EST
+  schedule:
+    - cron: "30 13 * * *"   # 13:30 UTC = 5:30 AM PST (6:30 AM during DST / PDT)
 
 permissions:
   contents: write   # required so the script can push HTML reports + update sent_welcome_emails.json
