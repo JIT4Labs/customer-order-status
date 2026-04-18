@@ -28,8 +28,8 @@ from collections import defaultdict
 
 # ─── Vtiger CRM Configuration ─────────────────────────────────────────────────
 VTIGER_URL = "https://jit4youinc.od2.vtiger.com"
-VTIGER_USER = "customersupport@jit4you.com"
-VTIGER_ACCESS_KEY = "fIPkOulq0BaA5y2s"
+VTIGER_USER = os.environ["VTIGER_USER"]
+VTIGER_ACCESS_KEY = os.environ["VTIGER_ACCESS_KEY"]
 
 # ─── Target Vendors (PO suppliers) ────────────────────────────────────────────
 # Reports are auto-generated for any customer with SOs linked to POs from these vendors
@@ -45,11 +45,11 @@ EXCLUDED_ACCOUNTS = ["pmahealthcare.com", "labx diagnostics"]
 
 # ─── GitHub Pages Config ──────────────────────────────────────────────────────
 GITHUB_REPO = "JIT4Labs/customer-order-status"
-GITHUB_TOKEN = "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"
+GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
 GITHUB_PAGES_URL = "https://JIT4Labs.github.io/customer-order-status"
 
 # ─── Zapier Webhook for Welcome Emails (via Outlook) ─────────────────────────
-ZAPIER_WEBHOOK_URL = "https://hooks.zapier.com/hooks/catch/2373110/u7vlb95/"
+ZAPIER_WEBHOOK_URL = os.environ["ZAPIER_WEBHOOK_URL"]
 
 # ─── Welcome Email Tracking ──────────────────────────────────────────────────
 # JSON file stored on GitHub to track which customers already received welcome emails
