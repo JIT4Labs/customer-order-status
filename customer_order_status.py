@@ -1427,55 +1427,42 @@ def main():
     else:
         print("  (none needed)")
 
-    # ═══ DIAGNOSTIC BLOCK — temporary, revert after analysis ═══
-    print("\n=== DIAGNOSTIC: Deep-check tracked customers not in today\'s active set ===")
-    _dx_active_lower = {n.strip().lower() for n in customer_data.keys()}
-    _dx_name_to_acctid = {}
-    for _aid, _info in account_map.items():
-        if isinstance(_info, dict) and _info.get("name"):
-            _dx_name_to_acctid.setdefault(_info["name"].strip().lower(), []).append(_aid)
-    for _tracked_name in _ac_known:
-        if _tracked_name.strip().lower() in _dx_active_lower:
+    # ═══ DIAGNOSTIC BLOCK v2 — focused SO lookup ═══
+    print("\n=== DIAGNOSTIC v2: Direct SO lookup by salesorder_no ===")
+    _target_so_numbers = ["SO328", "SO359"]
+    for _sn in _target_so_numbers:
+        print(f"\n--- Looking up {_sn} ---")
+        _sos = vtiger_query_all(f"SELECT * FROM SalesOrder WHERE salesorder_no = \'{_sn}\'")
+        if not _sos:
+            print(f"  NOT FOUND in Vtiger.")
             continue
-        print(f"\n--- {_tracked_name} ---")
-        _candidates = _dx_name_to_acctid.get(_tracked_name.strip().lower(), [])
-        # Also try fuzzy: contains match on either direction
-        for _canon, _aids in _dx_name_to_acctid.items():
-            if _canon == _tracked_name.strip().lower():
-                continue
-            if (_tracked_name.strip().lower() in _canon) or (_canon in _tracked_name.strip().lower()):
-                for _aid in _aids:
-                    if _aid not in _candidates:
-                        _candidates.append(_aid)
-                        print(f"  Fuzzy-matched Vtiger account: {_canon} ({_aid})")
-        if not _candidates:
-            print(f"  No Vtiger account found matching this name.")
-            continue
-        for _aid in _candidates:
-            _acct_name = account_map.get(_aid, {}).get("name", "?")
-            print(f"  Account id={_aid}  name={_acct_name}")
-            _all_sos = vtiger_query_all(f"SELECT * FROM SalesOrder WHERE account_id = '{_aid}'")
-            print(f"    Total SOs (any status): {len(_all_sos)}")
-            for _so in _all_sos:
-                _sos_id = _so.get("id", "?")
-                _sos_no = _so.get("salesorder_no", "?")
-                _sos_st = _so.get("sostatus", "?")
-                _items = fetch_line_items(_sos_id)
-                _open_items = [i for i in _items if str(i.get("outstanding_qty", "0")).rstrip("0").rstrip(".") not in ("", "0")]
-                print(f"    SO {_sos_no} (id={_sos_id}) status={_sos_st} line_items={len(_items)} open_items={len(_open_items)}")
-                if _open_items:
-                    # Show linked POs
-                    _pos = vtiger_query_all(f"SELECT * FROM PurchaseOrder WHERE salesorder_id = '{_sos_id}'")
-                    print(f"      Linked POs: {len(_pos)}")
-                    for _po in _pos:
-                        _vid = _po.get("vendor_id", "")
-                        _vname = vendor_map.get(_vid, "?")
-                        _pst = _po.get("postatus", "?")
-                        _is_target = _vname.strip().lower() in TARGET_VENDORS
-                        print(f"        PO vendor='{_vname}' target={_is_target} status={_pst}")
-                    for _it in _open_items[:3]:
-                        print(f"      OPEN item: productname={_it.get('productname','?')} qty={_it.get('quantity','?')} outstanding_qty={_it.get('outstanding_qty','?')}")
-    print("\n=== END DIAGNOSTIC ===\n")
+        for _so in _sos:
+            _id = _so.get("id", "?")
+            _st = _so.get("sostatus", "?")
+            _acct_id = _so.get("account_id", "?")
+            _acct_info = account_map.get(_acct_id, {})
+            _acct_name = _acct_info.get("name", "UNKNOWN") if isinstance(_acct_info, dict) else "?"
+            print(f"  id={_id}  status={_st}  account_id={_acct_id}  account_name={_acct_name}")
+            _items = fetch_line_items(_id)
+            _open = [i for i in _items if str(i.get("outstanding_qty", "0")).rstrip("0").rstrip(".") not in ("", "0")]
+            print(f"  line_items total={len(_items)}  open={len(_open)}")
+            for _it in _open[:5]:
+                print(f"    OPEN item: productname={_it.get('productname','?')} qty={_it.get('quantity','?')} delivered={_it.get('delivered_qty','?')} outstanding_qty={_it.get('outstanding_qty','?')}")
+            _pos = vtiger_query_all(f"SELECT * FROM PurchaseOrder WHERE salesorder_id = \'{_id}\'")
+            print(f"  Linked POs: {len(_pos)}")
+            for _po in _pos:
+                _vid = _po.get("vendor_id", "")
+                _vname = vendor_map.get(_vid, "?")
+                _pst = _po.get("postatus", "?")
+                _is_target = _vname.strip().lower() in TARGET_VENDORS
+                print(f"    PO vendor=\'{_vname}\' target={_is_target} status={_pst}")
+    # Also check: does LabX Diagnostic Systems (3x100924) have ALL its SOs? Re-query with full list.
+    print("\n--- Re-query ALL SOs for LabX Diagnostic Systems (id=3x100924) without truncation ---")
+    _lbx_all = vtiger_query_all("SELECT * FROM SalesOrder WHERE account_id = \'3x100924\'")
+    print(f"  Returned: {len(_lbx_all)} SOs")
+    for _so in _lbx_all:
+        print(f"    {_so.get('salesorder_no','?')} id={_so.get('id','?')} status={_so.get('sostatus','?')}")
+    print("\n=== END DIAGNOSTIC v2 ===\n")
 
     # Step 5: Push to GitHub Pages
     push_to_github()
