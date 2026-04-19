@@ -118,19 +118,38 @@ class VtigerFetchError(Exception):
     pass
 
 
-def vtiger_query_all(query_str):
-    """Fetch all records using pagination (Vtiger limits to 100 per query)."""
+def vtiger_query_all(query_str, page_size=1000):
+    """Fetch all records using KEYSET pagination.
+    Vtiger silently caps SELECT * responses at a per-module payload size
+    (~200 rows for Accounts, ~25 for SalesOrder) regardless of LIMIT. Classic
+    offset pagination (LIMIT off, cnt) is also unreliable (offset semantics
+    are buggy). We instead use WHERE id > 'last_id' ORDER BY id as the cursor.
+    Requires `id` in the SELECT field list (or SELECT *)."""
+    import re as _re
     all_results = []
-    offset = 0
+    last_id = ""
+    page_num = 0
     while True:
-        paginated = f"{query_str} LIMIT {offset}, 100"
-        batch = vtiger_query(paginated)
+        page_num += 1
+        q = query_str.strip().rstrip(";")
+        if last_id:
+            if _re.search(r"\bWHERE\b", q, _re.IGNORECASE):
+                q = _re.sub(r"\bWHERE\b",
+                            f"WHERE id > '{last_id}' AND",
+                            q, count=1, flags=_re.IGNORECASE)
+            else:
+                q = q + f" WHERE id > '{last_id}'"
+        q = f"{q} ORDER BY id LIMIT 0, {page_size}"
+        batch = vtiger_query(q)
         if not batch:
             break
         all_results.extend(batch)
-        if len(batch) < 100:
+        last_id = batch[-1].get("id", "")
+        if not last_id:
             break
-        offset += 100
+        if page_num > 50:
+            print(f"  WARNING: vtiger_query_all stopped at 50 pages ({len(all_results)} rows)")
+            break
     return all_results
 
 
@@ -1051,6 +1070,9 @@ def push_file_to_github(filepath, repo_path):
 def push_to_github():
     """Push generated HTML files to GitHub Pages via API."""
     print("\nStep 5: Pushing to GitHub Pages...")
+    if os.environ.get("DRY_RUN") == "1":
+        print("  DRY_RUN=1 — SKIPPED (no files pushed)")
+        return False
 
     success_count = 0
     for fname in os.listdir(OUTPUT_DIR):
@@ -1286,6 +1308,9 @@ def send_welcome_emails_to_new_customers(customer_data, account_map):
     Only sends once per customer — tracked via sent_welcome_emails.json on GitHub.
     """
     print("\nStep 6: Checking for new customers to send welcome emails...")
+    if os.environ.get("DRY_RUN") == "1":
+        print("  DRY_RUN=1 — SKIPPED (no emails sent)")
+        return
 
     # Load tracking data from GitHub
     tracking, tracking_sha = load_welcome_tracking()
