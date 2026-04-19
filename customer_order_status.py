@@ -1378,10 +1378,136 @@ def send_welcome_emails_to_new_customers(customer_data, account_map):
     else:
         print("  No emails were sent this run.")
 
+    return emails_sent
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Main
 # ═══════════════════════════════════════════════════════════════════════════════
+
+def send_summary_email(welcomed_customers, all_cleared_customers, customer_data, account_map):
+    """Step 7: Send a daily digest email to customersupport@jit4you.com via Resend.
+
+    Summarizes:
+      - Customers who received a welcome email this run
+      - Customers whose reports were marked as "All Clear" this run
+      - Complete customer report index (active + all-clear)
+    """
+    print("\nStep 7: Sending daily summary email...")
+    if os.environ.get("DRY_RUN") == "1":
+        print("  DRY_RUN=1 — SKIPPED")
+        return
+
+    today_str = datetime.now().strftime("%B %d, %Y")
+
+    active_names = set(customer_data.keys())
+    cleared_names = set(all_cleared_customers)
+    welcomed_set = set(welcomed_customers)
+    active_lower = {a.strip().lower() for a in active_names}
+
+    all_known = sorted(
+        active_names | cleared_names | welcomed_set,
+        key=lambda n: (n.strip().lower() not in active_lower, n.lower()),
+    )
+
+    def _status(name):
+        if name in active_names:
+            return "Open orders"
+        if name in cleared_names:
+            return "All Clear"
+        return "—"
+
+    def _url(name):
+        slug = make_safe_filename(name)
+        return GITHUB_PAGES_URL + "/" + slug + ".html"
+
+    def _badge(name):
+        s = _status(name)
+        if s == "Open orders":
+            return '<span style="display:inline-block;padding:3px 10px;background:#008080;color:white;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:0.3px;">Open orders</span>'
+        if s == "All Clear":
+            return '<span style="display:inline-block;padding:3px 10px;background:#c4c4c4;color:#333;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:0.3px;">All Clear</span>'
+        return '<span style="color:#999;">—</span>'
+
+    if welcomed_customers:
+        welcomed_html = '<ul style="margin:8px 0 0 0;padding-left:24px;color:#333;font-size:14px;line-height:1.7;">'
+        for n in welcomed_customers:
+            welcomed_html += "<li>" + n + "</li>"
+        welcomed_html += "</ul>"
+    else:
+        welcomed_html = '<p style="color:#999;font-style:italic;font-size:13px;margin:8px 0 0 0;">None today.</p>'
+
+    if all_cleared_customers:
+        cleared_html = '<ul style="margin:8px 0 0 0;padding-left:24px;color:#333;font-size:14px;line-height:1.7;">'
+        for n in all_cleared_customers:
+            cleared_html += "<li>" + n + "</li>"
+        cleared_html += "</ul>"
+    else:
+        cleared_html = '<p style="color:#999;font-style:italic;font-size:13px;margin:8px 0 0 0;">None today.</p>'
+
+    rows_html_parts = []
+    for name in all_known:
+        rows_html_parts.append(
+            '<tr>'
+            '<td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:14px;color:#101E3E;">' + name + '</td>'
+            '<td style="padding:8px 12px;border-bottom:1px solid #eee;">' + _badge(name) + '</td>'
+            '<td style="padding:8px 12px;border-bottom:1px solid #eee;font-size:13px;">'
+            '<a href="' + _url(name) + '" style="color:#008080;text-decoration:none;">View report</a>'
+            '</td></tr>'
+        )
+    rows_html = "\n".join(rows_html_parts)
+
+    body_html = (
+        '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
+        '<title>Daily Customer Order Status Summary</title></head>'
+        '<body style="margin:0;padding:0;background:#f0f2f5;font-family:\'Open Sans\',Arial,sans-serif;color:#101E3E;">'
+        '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:24px 0;">'
+        '<tr><td align="center">'
+        '<table width="680" cellpadding="0" cellspacing="0" style="max-width:680px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,0.06);">'
+        '<tr><td style="background:#101E3E;padding:24px 32px;border-bottom:3px solid #008080;">'
+        '<h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Daily Customer Order Status Summary</h1>'
+        '<p style="margin:4px 0 0 0;color:rgba(255,255,255,0.7);font-size:13px;">' + today_str + '</p>'
+        '</td></tr>'
+        '<tr><td style="padding:32px 32px 8px 32px;">'
+        '<h2 style="color:#101E3E;font-size:16px;font-weight:700;margin:0;">Welcome emails sent (' + str(len(welcomed_customers)) + ')</h2>'
+        + welcomed_html +
+        '<h2 style="color:#101E3E;font-size:16px;font-weight:700;margin:28px 0 0 0;">Pages marked as &quot;All Clear&quot; (' + str(len(all_cleared_customers)) + ')</h2>'
+        + cleared_html +
+        '<h2 style="color:#101E3E;font-size:16px;font-weight:700;margin:28px 0 12px 0;">Customer report index (' + str(len(all_known)) + ' total)</h2>'
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">'
+        '<thead><tr style="background:#f7f7f9;">'
+        '<th style="text-align:left;padding:10px 12px;font-size:12px;color:#666;border-bottom:2px solid #008080;text-transform:uppercase;letter-spacing:0.5px;">Customer</th>'
+        '<th style="text-align:left;padding:10px 12px;font-size:12px;color:#666;border-bottom:2px solid #008080;text-transform:uppercase;letter-spacing:0.5px;">Status</th>'
+        '<th style="text-align:left;padding:10px 12px;font-size:12px;color:#666;border-bottom:2px solid #008080;text-transform:uppercase;letter-spacing:0.5px;">Report</th>'
+        '</tr></thead><tbody>' + rows_html + '</tbody></table>'
+        '</td></tr>'
+        '<tr><td style="background:#101E3E;padding:16px;text-align:center;">'
+        '<p style="color:rgba(255,255,255,0.7);font-size:11px;margin:0;">Automated by customer-order-status-daily &middot; JIT4Labs</p>'
+        '</td></tr>'
+        '</table></td></tr></table></body></html>'
+    )
+
+    payload = {
+        "from": RESEND_FROM,
+        "to": ["customersupport@jit4you.com"],
+        "subject": "Customer Order Status — Daily Summary (" + today_str + ")",
+        "html": body_html,
+    }
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request("https://api.resend.com/emails", data=data, method="POST")
+    req.add_header("Authorization", "Bearer " + RESEND_API_KEY)
+    req.add_header("Content-Type", "application/json")
+    req.add_header("User-Agent", "JIT4Labs customer-order-status/1.0")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode())
+            print("  Summary response: id=" + result.get("id", "unknown"))
+            print("  ✓ Summary email sent to customersupport@jit4you.com")
+    except urllib.error.HTTPError as e:
+        print("  Summary error: " + str(e.code) + " " + e.read().decode()[:300])
+    except Exception as e:
+        print("  Summary error: " + str(e))
+
 
 def main():
     print("=" * 60)
@@ -1441,6 +1567,7 @@ def main():
         if isinstance(info, dict) and info.get("name")
     }
     _ac_count = 0
+    _all_cleared_names = []
     for _ac_name in _ac_known:
         if _ac_name.strip().lower() in _ac_active_lower:
             continue  # has open items -- detail page already generated in Step 4
@@ -1451,6 +1578,7 @@ def main():
             _ac_f.write(generate_all_clear_html(_ac_name, _ac_addr))
         print(f"  All Clear: {_ac_safe}.html ({_ac_name})")
         _ac_count += 1
+        _all_cleared_names.append(_ac_name)
     if _ac_count:
         print(f"  Generated {_ac_count} All Clear page(s)")
     else:
@@ -1459,8 +1587,11 @@ def main():
     # Step 5: Push to GitHub Pages
     push_to_github()
 
-    # Step 6: Send welcome emails to new customers via Zapier → Outlook
-    send_welcome_emails_to_new_customers(customer_data, account_map)
+    # Step 6: Send welcome emails to new customers via Resend
+    welcomed_customers = send_welcome_emails_to_new_customers(customer_data, account_map) or []
+
+    # Step 7: Send daily summary email to customersupport@jit4you.com
+    send_summary_email(welcomed_customers, _all_cleared_names, customer_data, account_map)
 
     # Summary
     print("\n" + "=" * 60)
