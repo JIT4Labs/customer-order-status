@@ -1427,42 +1427,55 @@ def main():
     else:
         print("  (none needed)")
 
-    # ═══ DIAGNOSTIC BLOCK v2 — focused SO lookup ═══
-    print("\n=== DIAGNOSTIC v2: Direct SO lookup by salesorder_no ===")
-    _target_so_numbers = ["SO328", "SO359"]
-    for _sn in _target_so_numbers:
-        print(f"\n--- Looking up {_sn} ---")
-        _sos = vtiger_query_all(f"SELECT * FROM SalesOrder WHERE salesorder_no = \'{_sn}\'")
-        if not _sos:
-            print(f"  NOT FOUND in Vtiger.")
-            continue
-        for _so in _sos:
-            _id = _so.get("id", "?")
-            _st = _so.get("sostatus", "?")
-            _acct_id = _so.get("account_id", "?")
-            _acct_info = account_map.get(_acct_id, {})
-            _acct_name = _acct_info.get("name", "UNKNOWN") if isinstance(_acct_info, dict) else "?"
-            print(f"  id={_id}  status={_st}  account_id={_acct_id}  account_name={_acct_name}")
-            _items = fetch_line_items(_id)
-            _open = [i for i in _items if str(i.get("outstanding_qty", "0")).rstrip("0").rstrip(".") not in ("", "0")]
-            print(f"  line_items total={len(_items)}  open={len(_open)}")
-            for _it in _open[:5]:
-                print(f"    OPEN item: productname={_it.get('productname','?')} qty={_it.get('quantity','?')} delivered={_it.get('delivered_qty','?')} outstanding_qty={_it.get('outstanding_qty','?')}")
-            _pos = vtiger_query_all(f"SELECT * FROM PurchaseOrder WHERE salesorder_id = \'{_id}\'")
-            print(f"  Linked POs: {len(_pos)}")
-            for _po in _pos:
-                _vid = _po.get("vendor_id", "")
-                _vname = vendor_map.get(_vid, "?")
-                _pst = _po.get("postatus", "?")
-                _is_target = _vname.strip().lower() in TARGET_VENDORS
-                print(f"    PO vendor=\'{_vname}\' target={_is_target} status={_pst}")
-    # Also check: does LabX Diagnostic Systems (3x100924) have ALL its SOs? Re-query with full list.
-    print("\n--- Re-query ALL SOs for LabX Diagnostic Systems (id=3x100924) without truncation ---")
-    _lbx_all = vtiger_query_all("SELECT * FROM SalesOrder WHERE account_id = \'3x100924\'")
-    print(f"  Returned: {len(_lbx_all)} SOs")
-    for _so in _lbx_all:
-        print(f"    {_so.get('salesorder_no','?')} id={_so.get('id','?')} status={_so.get('sostatus','?')}")
-    print("\n=== END DIAGNOSTIC v2 ===\n")
+    # ═══ DIAGNOSTIC BLOCK v3 — Vtiger query variant matrix ═══
+    print("\n=== DIAGNOSTIC v3: Query-variant matrix for LabX (3x100924) ===")
+    _acct_id = "3x100924"
+
+    # Helper — raw single-page query bypassing vtiger_query_all pagination wrapper
+    def _raw_query(q):
+        return vtiger_query(q)
+
+    _variants = [
+        ("A. baseline no limit",
+         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\'"),
+        ("B. explicit LIMIT 0,100",
+         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' LIMIT 0, 100"),
+        ("C. explicit LIMIT 0,1000",
+         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' LIMIT 0, 1000"),
+        ("D. LIMIT 100,100 (next page)",
+         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' LIMIT 100, 100"),
+        ("E. ORDER BY id DESC",
+         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' ORDER BY id DESC"),
+        ("F. ORDER BY id ASC",
+         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' ORDER BY id"),
+        ("G. filter: Partially delivered only",
+         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' AND sostatus = \'Partially delivered\'"),
+        ("H. minimal fields",
+         f"SELECT id, salesorder_no, sostatus FROM SalesOrder WHERE account_id = \'{_acct_id}\'"),
+        ("I. direct SO328 by number",
+         f"SELECT id, salesorder_no, account_id FROM SalesOrder WHERE salesorder_no = \'SO328\'"),
+        ("J. direct SO359 by number",
+         f"SELECT id, salesorder_no, account_id FROM SalesOrder WHERE salesorder_no = \'SO359\'"),
+    ]
+
+    for _label, _q in _variants:
+        _res = _raw_query(_q)
+        _nums = sorted([r.get("salesorder_no", "?") for r in _res])
+        print(f"\n{_label}:")
+        print(f"  query: {_q}")
+        print(f"  returned {len(_res)} row(s)")
+        if _res:
+            print(f"  SO numbers: {_nums}")
+
+    # Also: full manual pagination to see if pages 2,3,... have data
+    print("\nK. Manual pagination walk (offset 0,100,200,300,400):")
+    for _off in (0, 100, 200, 300, 400):
+        _q = f"SELECT id, salesorder_no FROM SalesOrder WHERE account_id = \'{_acct_id}\' LIMIT {_off}, 100"
+        _res = _raw_query(_q)
+        _nums = sorted([r.get("salesorder_no", "?") for r in _res])
+        print(f"  offset {_off}: {len(_res)} row(s)  SOs={_nums if _res else '[]'}")
+
+    print("\n=== END DIAGNOSTIC v3 ===\n")
 
     # Step 5: Push to GitHub Pages
     push_to_github()
