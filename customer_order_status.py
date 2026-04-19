@@ -119,18 +119,22 @@ class VtigerFetchError(Exception):
 
 
 def vtiger_query_all(query_str):
-    """Fetch all records using pagination (Vtiger limits to 100 per query)."""
+    """Fetch all records using pagination. Page size is 1000 because Vtiger's
+    REST query engine silently truncates SELECT * responses when LIMIT count
+    is 100 (internal payload behavior differs between LIMIT 100 and LIMIT 1000).
+    Using 1000 avoids the truncation. Offsets step by 1000 accordingly."""
+    PAGE_SIZE = 1000
     all_results = []
     offset = 0
     while True:
-        paginated = f"{query_str} LIMIT {offset}, 100"
+        paginated = f"{query_str} LIMIT {offset}, {PAGE_SIZE}"
         batch = vtiger_query(paginated)
         if not batch:
             break
         all_results.extend(batch)
-        if len(batch) < 100:
+        if len(batch) < PAGE_SIZE:
             break
-        offset += 100
+        offset += PAGE_SIZE
     return all_results
 
 
@@ -1286,9 +1290,6 @@ def send_welcome_emails_to_new_customers(customer_data, account_map):
     Only sends once per customer — tracked via sent_welcome_emails.json on GitHub.
     """
     print("\nStep 6: Checking for new customers to send welcome emails...")
-    # DIAGNOSTIC MODE: skip all email sending for this run. Revert after diagnosis.
-    print("  DIAGNOSTIC MODE ACTIVE — Step 6 skipped, no emails will be sent.")
-    return
 
     # Load tracking data from GitHub
     tracking, tracking_sha = load_welcome_tracking()
@@ -1426,56 +1427,6 @@ def main():
         print(f"  Generated {_ac_count} All Clear page(s)")
     else:
         print("  (none needed)")
-
-    # ═══ DIAGNOSTIC BLOCK v3 — Vtiger query variant matrix ═══
-    print("\n=== DIAGNOSTIC v3: Query-variant matrix for LabX (3x100924) ===")
-    _acct_id = "3x100924"
-
-    # Helper — raw single-page query bypassing vtiger_query_all pagination wrapper
-    def _raw_query(q):
-        return vtiger_query(q)
-
-    _variants = [
-        ("A. baseline no limit",
-         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\'"),
-        ("B. explicit LIMIT 0,100",
-         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' LIMIT 0, 100"),
-        ("C. explicit LIMIT 0,1000",
-         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' LIMIT 0, 1000"),
-        ("D. LIMIT 100,100 (next page)",
-         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' LIMIT 100, 100"),
-        ("E. ORDER BY id DESC",
-         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' ORDER BY id DESC"),
-        ("F. ORDER BY id ASC",
-         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' ORDER BY id"),
-        ("G. filter: Partially delivered only",
-         f"SELECT * FROM SalesOrder WHERE account_id = \'{_acct_id}\' AND sostatus = \'Partially delivered\'"),
-        ("H. minimal fields",
-         f"SELECT id, salesorder_no, sostatus FROM SalesOrder WHERE account_id = \'{_acct_id}\'"),
-        ("I. direct SO328 by number",
-         f"SELECT id, salesorder_no, account_id FROM SalesOrder WHERE salesorder_no = \'SO328\'"),
-        ("J. direct SO359 by number",
-         f"SELECT id, salesorder_no, account_id FROM SalesOrder WHERE salesorder_no = \'SO359\'"),
-    ]
-
-    for _label, _q in _variants:
-        _res = _raw_query(_q)
-        _nums = sorted([r.get("salesorder_no", "?") for r in _res])
-        print(f"\n{_label}:")
-        print(f"  query: {_q}")
-        print(f"  returned {len(_res)} row(s)")
-        if _res:
-            print(f"  SO numbers: {_nums}")
-
-    # Also: full manual pagination to see if pages 2,3,... have data
-    print("\nK. Manual pagination walk (offset 0,100,200,300,400):")
-    for _off in (0, 100, 200, 300, 400):
-        _q = f"SELECT id, salesorder_no FROM SalesOrder WHERE account_id = \'{_acct_id}\' LIMIT {_off}, 100"
-        _res = _raw_query(_q)
-        _nums = sorted([r.get("salesorder_no", "?") for r in _res])
-        print(f"  offset {_off}: {len(_res)} row(s)  SOs={_nums if _res else '[]'}")
-
-    print("\n=== END DIAGNOSTIC v3 ===\n")
 
     # Step 5: Push to GitHub Pages
     push_to_github()
