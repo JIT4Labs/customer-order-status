@@ -35,6 +35,11 @@ VTIGER_ACCESS_KEY = os.environ["VTIGER_ACCESS_KEY"]
 # Reports are auto-generated for any customer with SOs linked to POs from these vendors
 TARGET_VENDORS = ["pma services", "clearchem diagnostics, inc", "allora biotech llc", "aldx"]
 
+# ─── SO Date Filter ────────────────────────────────────────────────────────────
+# Only include SalesOrders created on or after this date. Pre-2026 legacy data
+# is skipped entirely (too noisy, historical).
+SO_MIN_CREATED_DATE = "2026-01-01 00:00:00"
+
 # ─── Customer Name Merges ─────────────────────────────────────────────────────
 # Map alternate account names to a single canonical name
 CUSTOMER_NAME_MERGE = {}
@@ -241,7 +246,8 @@ def discover_customers_by_vendor(vendor_map, account_map):
         sos = vtiger_query_all(
             f"SELECT * FROM SalesOrder WHERE id = '{so_id}' "
             f"AND sostatus != 'Cancelled' AND sostatus != 'Delivered' "
-            f"AND sostatus != 'Fully delivered'"
+            f"AND sostatus != 'Fully delivered' "
+            f"AND createdtime >= '{SO_MIN_CREATED_DATE}'"
         )
         for so in sos:
             qualifying_account_ids.add(so.get("account_id", ""))
@@ -257,7 +263,8 @@ def discover_customers_by_vendor(vendor_map, account_map):
         sos = vtiger_query_all(
             f"SELECT * FROM SalesOrder WHERE account_id = '{acct_id}' "
             f"AND sostatus != 'Cancelled' AND sostatus != 'Delivered' "
-            f"AND sostatus != 'Fully delivered'"
+            f"AND sostatus != 'Fully delivered' "
+            f"AND createdtime >= '{SO_MIN_CREATED_DATE}'"
         )
         print(f"    {acct_name}: {len(sos)} open SOs")
         qualifying_sos.extend(sos)
