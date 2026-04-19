@@ -1286,6 +1286,9 @@ def send_welcome_emails_to_new_customers(customer_data, account_map):
     Only sends once per customer — tracked via sent_welcome_emails.json on GitHub.
     """
     print("\nStep 6: Checking for new customers to send welcome emails...")
+    # DIAGNOSTIC MODE: skip all email sending for this run. Revert after diagnosis.
+    print("  DIAGNOSTIC MODE ACTIVE — Step 6 skipped, no emails will be sent.")
+    return
 
     # Load tracking data from GitHub
     tracking, tracking_sha = load_welcome_tracking()
@@ -1423,6 +1426,56 @@ def main():
         print(f"  Generated {_ac_count} All Clear page(s)")
     else:
         print("  (none needed)")
+
+    # ═══ DIAGNOSTIC BLOCK — temporary, revert after analysis ═══
+    print("\n=== DIAGNOSTIC: Deep-check tracked customers not in today\'s active set ===")
+    _dx_active_lower = {n.strip().lower() for n in customer_data.keys()}
+    _dx_name_to_acctid = {}
+    for _aid, _info in account_map.items():
+        if isinstance(_info, dict) and _info.get("name"):
+            _dx_name_to_acctid.setdefault(_info["name"].strip().lower(), []).append(_aid)
+    for _tracked_name in _ac_known:
+        if _tracked_name.strip().lower() in _dx_active_lower:
+            continue
+        print(f"\n--- {_tracked_name} ---")
+        _candidates = _dx_name_to_acctid.get(_tracked_name.strip().lower(), [])
+        # Also try fuzzy: contains match on either direction
+        for _canon, _aids in _dx_name_to_acctid.items():
+            if _canon == _tracked_name.strip().lower():
+                continue
+            if (_tracked_name.strip().lower() in _canon) or (_canon in _tracked_name.strip().lower()):
+                for _aid in _aids:
+                    if _aid not in _candidates:
+                        _candidates.append(_aid)
+                        print(f"  Fuzzy-matched Vtiger account: {_canon} ({_aid})")
+        if not _candidates:
+            print(f"  No Vtiger account found matching this name.")
+            continue
+        for _aid in _candidates:
+            _acct_name = account_map.get(_aid, {}).get("name", "?")
+            print(f"  Account id={_aid}  name={_acct_name}")
+            _all_sos = vtiger_query_all(f"SELECT * FROM SalesOrder WHERE account_id = '{_aid}'")
+            print(f"    Total SOs (any status): {len(_all_sos)}")
+            for _so in _all_sos:
+                _sos_id = _so.get("id", "?")
+                _sos_no = _so.get("salesorder_no", "?")
+                _sos_st = _so.get("sostatus", "?")
+                _items = fetch_line_items(_sos_id)
+                _open_items = [i for i in _items if str(i.get("outstanding_qty", "0")).rstrip("0").rstrip(".") not in ("", "0")]
+                print(f"    SO {_sos_no} (id={_sos_id}) status={_sos_st} line_items={len(_items)} open_items={len(_open_items)}")
+                if _open_items:
+                    # Show linked POs
+                    _pos = vtiger_query_all(f"SELECT * FROM PurchaseOrder WHERE salesorder_id = '{_sos_id}'")
+                    print(f"      Linked POs: {len(_pos)}")
+                    for _po in _pos:
+                        _vid = _po.get("vendor_id", "")
+                        _vname = vendor_map.get(_vid, "?")
+                        _pst = _po.get("postatus", "?")
+                        _is_target = _vname.strip().lower() in TARGET_VENDORS
+                        print(f"        PO vendor='{_vname}' target={_is_target} status={_pst}")
+                    for _it in _open_items[:3]:
+                        print(f"      OPEN item: productname={_it.get('productname','?')} qty={_it.get('quantity','?')} outstanding_qty={_it.get('outstanding_qty','?')}")
+    print("\n=== END DIAGNOSTIC ===\n")
 
     # Step 5: Push to GitHub Pages
     push_to_github()
