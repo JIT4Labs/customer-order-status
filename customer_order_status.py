@@ -119,22 +119,18 @@ class VtigerFetchError(Exception):
 
 
 def vtiger_query_all(query_str):
-    """Fetch all records using pagination. Page size is 1000 because Vtiger's
-    REST query engine silently truncates SELECT * responses when LIMIT count
-    is 100 (internal payload behavior differs between LIMIT 100 and LIMIT 1000).
-    Using 1000 avoids the truncation. Offsets step by 1000 accordingly."""
-    PAGE_SIZE = 1000
+    """Fetch all records using pagination (Vtiger limits to 100 per query)."""
     all_results = []
     offset = 0
     while True:
-        paginated = f"{query_str} LIMIT {offset}, {PAGE_SIZE}"
+        paginated = f"{query_str} LIMIT {offset}, 100"
         batch = vtiger_query(paginated)
         if not batch:
             break
         all_results.extend(batch)
-        if len(batch) < PAGE_SIZE:
+        if len(batch) < 100:
             break
-        offset += PAGE_SIZE
+        offset += 100
     return all_results
 
 
